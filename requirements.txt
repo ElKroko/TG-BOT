@@ -1,0 +1,4 @@
+python-telegram-bot~=20.8  # O la última versión estable de la v20+
+snscrape~=0.7.0             # O la última versión estable
+python-dotenv~=1.0.0
+praw
