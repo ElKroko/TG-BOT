@@ -1,5 +1,6 @@
 import logging
-from telegram import BotCommand, ParseMode
+from telegram import BotCommand
+from telegram.constants import ParseMode
 from telegram.ext import Application, ApplicationBuilder, CommandHandler, MessageHandler, filters
 from config import BOT_TOKEN, TARGET_CHANNEL_ID
 from datetime import time, timedelta
@@ -82,7 +83,12 @@ def main() -> None:
 
     logger.info("Iniciando el bot...")
 
-    application = ApplicationBuilder().token(BOT_TOKEN).post_init(post_init).build()
+    application = (
+        ApplicationBuilder()
+        .token(BOT_TOKEN)
+        .post_init(post_init)
+        .build()
+    )
 
     # —— AÑADIR AQUI LOS HANDLERS —— 
     application.add_handler(CommandHandler("start", start_command_handler))
@@ -107,7 +113,7 @@ def main() -> None:
         time=time(hour=9, minute=0, tzinfo=ZoneInfo("America/Santiago"))
     )
     
-    application.run_polling()
+    application.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
