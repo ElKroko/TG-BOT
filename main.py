@@ -3,7 +3,20 @@ import logging
 from telegram import BotCommand
 from telegram.ext import Application, ApplicationBuilder, CommandHandler, MessageHandler, filters
 from config import BOT_TOKEN
-from handlers import start_command_handler, handle_forwarded_message, reddit_command_handler
+from datetime import time, timedelta
+from zoneinfo import ZoneInfo
+from handlers import (
+    start_command_handler,
+    handle_forwarded_message,
+    reddit_command_handler,
+    hackernews_command_handler,   # <-- nuevo import
+    help_command_handler,
+    send_daily_news
+)
+
+# en post_init, añade al menú:
+
+# tras los otros handlers:
 
 
 # Configuración básica de logging
@@ -22,7 +35,10 @@ async def post_init(application: Application) -> None: # <--- ESTA ES LA LÍNEA 
     """
     bot_commands = [
         BotCommand("start", "🚀 Iniciar el bot y ver mensaje de bienvenida"),
-        BotCommand("reddit", "🌐 Publicar posts de Reddit: /reddit <subreddit> [cantidad]")
+        BotCommand("reddit", "🌐 Publicar posts de Reddit: /reddit <subreddit> [cantidad]"),
+        BotCommand("hackernews", "🚀 /hackernews [n] – Top n de Hacker News"),
+        BotCommand("help", "💡 Mostrar ayuda detallada con todos los comandos disponibles")
+
     ]
     try:
         await application.bot.set_my_commands(bot_commands)
@@ -62,8 +78,24 @@ def main() -> None:
     application.add_handler(CommandHandler("start", start_command_handler))
     application.add_handler(CommandHandler("reddit", reddit_command_handler))   # ← ¡registra Reddit!
     application.add_handler(MessageHandler(filters.FORWARDED & (~filters.COMMAND), handle_forwarded_message))
-
+    application.add_handler(CommandHandler("hackernews", hackernews_command_handler))
+    application.add_handler(CommandHandler("help", help_command_handler))
     logger.info("Bot iniciado y escuchando updates...")
+
+    # —— AÑADIR AQUI EL JOB DIARIO —— 
+    # Se ejecuta todos los días a las 09:00 (hora de Santiago)
+    application.job_queue.run_daily(
+        send_daily_news,
+        time=time(hour=9, minute=0, tzinfo=ZoneInfo("America/Santiago"))
+    )
+    
+    # ——————————————————————————
+    # Job de prueba: ejecuta send_daily_news
+    # 5 segundos después del arranque
+    application.job_queue.run_once(
+        send_daily_news,
+        when=timedelta(seconds=5)
+    )
     application.run_polling()
 
 if __name__ == "__main__":

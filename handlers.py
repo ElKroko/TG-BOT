@@ -7,12 +7,54 @@ from telegram import User
 from fetchers.reddit import fetch_subreddit_posts
 from utils.formatter import format_reddit_posts
 
+from fetchers.hackernews import fetch_hn_posts
+from utils.formatter import format_hn_posts
+
 from config import ADMIN_IDS, TARGET_CHANNEL_ID
 # Comentamos las importaciones de Twitter ya que esa funcionalidad está en pausa
 # from fetchers.twitter import fetch_tweet_data
 # from utils.formatter import format_tweet_message
 
 logger = logging.getLogger(__name__)
+
+async def send_daily_news(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Callback que envía las noticias diarias al canal."""
+    # 1) Reddit
+    reddit_posts = fetch_subreddit_posts("python", 3)
+    reddit_msg   = format_reddit_posts(reddit_posts, "python")
+
+    # 2) Hacker News
+    hn_posts  = fetch_hn_posts(5)
+    hn_msg    = format_hn_posts(hn_posts, 5)
+
+    # 3) Publicar ambos bloques
+    await context.bot.send_message(
+        chat_id=TARGET_CHANNEL_ID,
+        text="🗞️ *Noticias diarias – CodevsBot* 🕘\n\n" + reddit_msg + "\n\n" + hn_msg,
+        parse_mode="Markdown"
+    )
+
+async def hackernews_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Maneja /hackernews para traer los posts top de HN."""
+    user = update.effective_user
+    if user.id not in ADMIN_IDS:
+        await update.message.reply_text("🚫 No tienes permiso para usar este comando.")
+        return
+
+    args = context.args
+    limit = int(args[0]) if args and args[0].isdigit() else 5
+
+    posts = fetch_hn_posts(limit)
+    message_text = format_hn_posts(posts, limit)
+
+    await context.bot.send_message(
+        chat_id=TARGET_CHANNEL_ID,
+        text=message_text,
+        parse_mode="Markdown"
+    )
+    await update.message.reply_text(f"✅ Publicados {len(posts)} posts de Hacker News.")
+
+
 
 # --- INICIO: FUNCIONALIDAD DE TWITTER (COMENTADA POR AHORA) ---
 # async def agregar_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -62,11 +104,36 @@ logger = logging.getLogger(__name__)
 
 
 async def start_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Responde al comando /start."""
+    """Responde al comando /start con una descripción completa del bot."""
+    welcome_text = (
+        "👋 ¡Hola! Soy *CodevsBot*.\n\n"
+        "Aquí puedes:\n"
+        "• 🔄 Reenviar mensajes de otros chats para publicarlos en nuestro canal.\n"
+        "• 🌐 Usar `/reddit <subreddit> [n]` para compartir los top n posts de Reddit.\n"
+        "• 🚀 Usar `/hackernews [n]` para publicar los top n artículos de Hacker News.\n\n"
+        "Solo los administradores pueden ejecutar estos comandos.\n"
+        "Escribe `/help` para ver esta ayuda en cualquier momento."
+    )
+
     await update.message.reply_text(
-        "¡Hola! Soy CodevsBot.\n"
-        "Reenvíame un mensaje de Telegram y (si eres admin) lo publicaré en el canal designado."
-        # "Usa /agregar <URL_del_tweet> si eres admin." # Comentado
+        welcome_text,
+        parse_mode="Markdown"
+    )
+
+async def help_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Muestra la ayuda detallada con todos los comandos disponibles."""
+    help_text = (
+        "*CodevsBot – Ayuda* 💡\n\n"
+        "Aquí puedes utilizar las siguientes funciones:\n"
+        "• `/start` – Ver mensaje de bienvenida.\n"
+        "• `/help`  – Mostrar esta ayuda.\n"
+        "• `/reddit <subreddit> [n]` – Publica los top n posts de un subreddit.\n"
+        "• `/hackernews [n]` – Publica los top n artículos de Hacker News.\n"
+        "• *Reenvío de mensajes* – Reenvía cualquier mensaje de Telegram y, si eres admin, lo publico en el canal."
+    )
+    await update.message.reply_text(
+        help_text,
+        parse_mode="Markdown"
     )
 
 # --- INICIO: NUEVA FUNCIONALIDAD DE REENVÍO DE MENSAJES DE TELEGRAM ---

@@ -35,6 +35,19 @@ def format_reddit_posts(posts, subreddit_name):
         )
     return "\n".join(lines)
 
+def format_hn_posts(posts, limit):
+    if not posts:
+        return "⚠️ No pude obtener posts de Hacker News."
+
+    lines = [f"🚀 *Top {limit} de Hacker News*:\n"]
+    for p in posts:
+        lines.append(
+            f"• *{p['title']}*  \n"
+            f"  por {p['author']} · publicado {p['published']}  \n"
+            f"  🔗 {p['link']}\n"
+        )
+    return "\n".join(lines)
+
 
 if __name__ == '__main__':
     # Ejemplo de uso
