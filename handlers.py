@@ -17,6 +17,12 @@ from config import ADMIN_IDS, TARGET_CHANNEL_ID
 
 logger = logging.getLogger(__name__)
 
+async def testdaily_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.effective_user.id not in ADMIN_IDS:
+        return await update.message.reply_text("🚫 No tienes permiso.")
+    await send_daily_news(context)
+    await update.message.reply_text("✅ Noticias de prueba enviadas.")
+
 
 async def my_roles_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     role = context.bot_data.get("user_roles", {}).get(update.effective_user.id)
@@ -157,38 +163,29 @@ async def hackernews_command_handler(update: Update, context: ContextTypes.DEFAU
 #         logger.error(f"Error al enviar mensaje al canal {TARGET_CHANNEL_ID}: {e}", exc_info=True)
 # --- FIN: FUNCIONALIDAD DE TWITTER (COMENTADA POR AHORA) ---
 
-
-async def start_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Responde al comando /start con una descripción completa del bot."""
-    welcome_text = (
+async def start_command_handler(update, context):
+    await update.message.reply_text(
         "👋 ¡Hola! Soy *CodevsBot*.\n\n"
-        "Aquí puedes:\n"
-        "• 🔄 Reenviar mensajes de otros chats para publicarlos en nuestro canal.\n"
-        "• 🌐 Usar `/reddit <subreddit> [n]` para compartir los top n posts de Reddit.\n"
-        "• 🚀 Usar `/hackernews [n]` para publicar los top n artículos de Hacker News.\n\n"
-        "Solo los administradores pueden ejecutar estos comandos.\n"
-        "Escribe `/help` para ver esta ayuda en cualquier momento."
+        "• /help – ver comandos\n"
+        "• /reddit – posts de Reddit\n"
+        "• /hackernews – artículos de Hacker News\n"
+        "• /myroles – tu rol\n"
+        "• /testdaily – noticias ahora\n\n"
+        "Y puedes reenviar mensajes para publicarlos en el canal (solo admins).",
+        parse_mode=ParseMode.MARKDOWN
     )
 
+async def help_command_handler(update, context):
     await update.message.reply_text(
-        welcome_text,
-        parse_mode="Markdown"
-    )
-
-async def help_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Muestra la ayuda detallada con todos los comandos disponibles."""
-    help_text = (
         "*CodevsBot – Ayuda* 💡\n\n"
-        "Aquí puedes utilizar las siguientes funciones:\n"
-        "• `/start` – Ver mensaje de bienvenida.\n"
-        "• `/help`  – Mostrar esta ayuda.\n"
-        "• `/reddit <subreddit> [n]` – Publica los top n posts de un subreddit.\n"
-        "• `/hackernews [n]` – Publica los top n artículos de Hacker News.\n"
-        "• *Reenvío de mensajes* – Reenvía cualquier mensaje de Telegram y, si eres admin, lo publico en el canal."
-    )
-    await update.message.reply_text(
-        help_text,
-        parse_mode="Markdown"
+        "/start – bienvenida\n"
+        "/help – esta ayuda\n"
+        "/reddit <subreddit> [n]\n"
+        "/hackernews [n]\n"
+        "/myroles\n"
+        "/testdaily\n"
+        "Reenvío de mensajes (admins)",
+        parse_mode=ParseMode.MARKDOWN
     )
 
 # --- INICIO: NUEVA FUNCIONALIDAD DE REENVÍO DE MENSAJES DE TELEGRAM ---
