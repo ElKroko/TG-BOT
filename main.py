@@ -1,5 +1,4 @@
 import logging
-# import asyncio # asyncio es importado por telegram.ext así que no es estrictamente necesario importarlo aquí directamente
 from telegram import BotCommand
 from telegram.ext import Application, ApplicationBuilder, CommandHandler, MessageHandler, filters
 from config import BOT_TOKEN
@@ -11,13 +10,11 @@ from handlers import (
     reddit_command_handler,
     hackernews_command_handler,   # <-- nuevo import
     help_command_handler,
-    send_daily_news
+    send_daily_news,
+    welcome_new_members,
+    role_command_handler,
+    my_roles_handler
 )
-
-# en post_init, añade al menú:
-
-# tras los otros handlers:
-
 
 # Configuración básica de logging
 logging.basicConfig(
@@ -80,6 +77,12 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.FORWARDED & (~filters.COMMAND), handle_forwarded_message))
     application.add_handler(CommandHandler("hackernews", hackernews_command_handler))
     application.add_handler(CommandHandler("help", help_command_handler))
+    # Mensajes de bienvenida
+    application.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new_members))
+    application.add_handler(CommandHandler("iamdev", role_command_handler))
+    application.add_handler(CommandHandler("iamux",  role_command_handler))
+    application.add_handler(CommandHandler("iamcrypto", role_command_handler))
+    application.add_handler(CommandHandler("myroles", my_roles_handler))
     logger.info("Bot iniciado y escuchando updates...")
 
     # —— AÑADIR AQUI EL JOB DIARIO —— 

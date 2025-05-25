@@ -17,6 +17,61 @@ from config import ADMIN_IDS, TARGET_CHANNEL_ID
 
 logger = logging.getLogger(__name__)
 
+
+async def my_roles_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    role = context.bot_data.get("user_roles", {}).get(update.effective_user.id)
+    await update.message.reply_text(
+        f"Tu rol actual: *{role or 'sin rol asignado'}*",
+        parse_mode="Markdown"
+    )
+
+
+async def role_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Asigna un rol interno al usuario: /iamdev, /iamux, /iamcrypto."""
+    cmd = update.message.text.lower().strip().lstrip("/")
+
+    rol_map = {
+        "iamdev":    "Desarrollador Frontend/Backend",
+        "iamux":     "Diseñador UI/UX",
+        "iamcrypto": "Entusiasta de Cripto y Trading"
+    }
+    if cmd not in rol_map:
+        return
+
+    role = rol_map[cmd]
+    user = update.effective_user
+    # Guarda en bot_data
+    roles = context.bot_data.setdefault("user_roles", {})
+    roles[user.id] = role
+
+    await update.message.reply_text(
+        f"✅ {user.full_name}, ahora estás registrado como *{role}*.",
+        parse_mode="Markdown"
+    )
+
+async def welcome_new_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Envía un DM de bienvenida cuando alguien entra al grupo."""
+    for member in update.message.new_chat_members:
+        try:
+            # Envía mensaje privado
+            await context.bot.send_message(
+                chat_id=member.id,
+                text=(
+                    f"👋 ¡Bienvenido/a, {member.full_name}!\n\n"
+                    "Este es el grupo oficial de Codevs. Te invito a:\n"
+                    "• Leer las reglas en el canal fijado.\n"
+                    "• Pasar por /help para ver comandos útiles.\n"
+                    "• Presentarte con /iamdev, /iamux, /iamcrypto si quieres asignarte un rol."
+                )
+            )
+        except Exception:
+            # Si no se puede mandar PM (privacidad), saluda en el grupo
+            await update.message.reply_text(
+                f"👋 ¡Bienvenido/a, {member.full_name}! "
+                "No pude mandarte un privado, pero aquí estamos para ayudarte."
+            )
+
+
 async def send_daily_news(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Callback que envía las noticias diarias al canal."""
     # 1) Reddit
